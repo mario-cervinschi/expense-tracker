@@ -1,0 +1,27 @@
+.items-center{
+    align-items: center;
+}
+
+.justify-center{
+    justify-content: center;
+}
+
+.flex{
+    display: flex;
+}
+
+.flex-row{
+    flex-direction: row;
+}
+
+.flex-column{
+    flex-direction: column;
+}
+
+.income{
+    color: var(--ion-color-success); /* Verde standard din Ionic */
+}
+
+.expense{
+    color: var(--ion-color-danger); /* Roșu standard din Ionic */
+}
