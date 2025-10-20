@@ -1,0 +1,25 @@
+.login-form-list {
+    background: #1b1b1b;
+    padding: 0px 24px 32px 24px;
+    border: 0 solid black;
+    border-radius: 12px;
+}
+
+.container{
+    max-width: 396px;
+}
+
+/* .login-form-input {} */
+
+.password-button-hidden {
+    display: none;
+}
+
+.password-button-visible {
+    display: block;
+}
+
+ion-input {
+    width: 100%;
+    margin-bottom: 24px;
+}
