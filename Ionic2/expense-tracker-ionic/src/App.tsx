@@ -1,20 +1,10 @@
 import { Redirect, Route, Switch } from "react-router-dom";
 import {
   IonApp,
-  IonHeader,
-  IonIcon,
-  IonLabel,
   IonRouterOutlet,
-  IonTabBar,
-  IonTabButton,
-  IonTabs,
-  IonTitle,
-  IonToolbar,
   setupIonicReact,
 } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
-import { ellipse, square, triangle } from "ionicons/icons";
-import Tab1 from "./pages/mainpage/Tab1";
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
@@ -49,8 +39,9 @@ import LoginPage from "./pages/auth/login/LoginPage";
 // ... importurile CSS ...
 import "./theme/variables.css";
 import { AuthProvider } from "./pages/auth/AuthContext";
-import ProtectedRoute from "./pages/auth/ProtectedRoute";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import RegisterPage from "./pages/auth/register/RegisterPage";
+import Transactions from "./pages/mainpage/Transactions";
 
 setupIonicReact();
 
@@ -65,12 +56,12 @@ const App: React.FC = () => (
             <Route exact path="/auth" component={LoginPage} />
             <Route exact path="/register" component={RegisterPage} />
 
-            <ProtectedRoute exact path="/tab1">
-              <Tab1 />
+            <ProtectedRoute exact path="/transactions">
+              <Transactions />
             </ProtectedRoute>
 
             <Route exact path="/">
-              <Redirect to="/tab1" />
+              <Redirect to="/transactions" />
             </Route>
 
             <Redirect from="*" to="/auth" />

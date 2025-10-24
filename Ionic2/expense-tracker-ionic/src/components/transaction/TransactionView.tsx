@@ -11,7 +11,7 @@ import {
   IonContent,
 } from '@ionic/react';
 import { Transaction } from '../../models/transaction';
-import TransactionList from '../../components/transaction_list/TransactionList';
+import TransactionList from './TransactionList';
 
 interface TransactionViewProps {
   loading: boolean;

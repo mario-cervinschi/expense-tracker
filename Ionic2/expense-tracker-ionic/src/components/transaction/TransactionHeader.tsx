@@ -11,14 +11,14 @@ import {
   IonLabel,
 } from '@ionic/react';
 import { cloudOfflineOutline, logOutOutline } from 'ionicons/icons';
-import NetworkStatus from './../../components/network/NetworkStatus';
+import NetworkStatus from '../network/NetworkStatus';
 
-interface Tab1HeaderProps {
+interface TransactionHeaderProps {
   pendingOpsCount: number;
   onLogout: () => void;
 }
 
-const Tab1Header: React.FC<Tab1HeaderProps> = ({ pendingOpsCount, onLogout }) => {
+const TransactionHeader: React.FC<TransactionHeaderProps> = ({ pendingOpsCount, onLogout }) => {
   return (
     <IonHeader translucent={true}>
       <IonToolbar>
@@ -42,4 +42,4 @@ const Tab1Header: React.FC<Tab1HeaderProps> = ({ pendingOpsCount, onLogout }) =>
   );
 };
 
-export default Tab1Header;
+export default TransactionHeader;

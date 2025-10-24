@@ -40,7 +40,7 @@ const RegisterPage: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/tab1", "root", "replace");
+      router.push("/transactions", "root", "replace");
     }
   }, [isAuthenticated, router]);
 

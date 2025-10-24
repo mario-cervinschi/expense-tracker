@@ -28,7 +28,7 @@ const LoginPage: React.FC = () => {
     try {
       const response = await AuthService.userLogin(obj);
       login(response.token);
-      router.push("/tab1", "root", "replace");
+      router.push("/transactions", "root", "replace");
     } catch (err) {
       console.error(err);
       setAlertMessage(`Invalid credentials. ${err}`);
@@ -41,7 +41,7 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/tab1", "root", "replace");
+      router.push("/transactions", "root", "replace");
     }
   }, [isAuthenticated, router]);
 

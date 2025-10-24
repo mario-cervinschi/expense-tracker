@@ -7,18 +7,18 @@ import {
   IonPage,
   IonSearchbar,
 } from "@ionic/react";
-import "./Tab1.css";
+import "./Transactions.css";
 import { useState } from "react";
 import { Transaction } from "../../models/transaction";
 
-import EditTransactionModal from "../../components/transaction_list/EditTransactonModal";
+import EditTransactionModal from "../../components/transaction/EditTransactonModal";
 import { add } from "ionicons/icons";
 import { useAuth } from "../auth/AuthContext";
 import { useTransactionManager } from "../../hooks/useTransactionManager";
-import Tab1Header from "./Tab1Header";
-import TransactionView from "./TransactionView";
+import TransactionHeader from "../../components/transaction/TransactionHeader";
+import TransactionView from "../../components/transaction/TransactionView";
 
-const Tab1: React.FC = () => {
+const Transactions: React.FC = () => {
   const { logout } = useAuth();
   const name: string | "user_no_name" = "user_no_name";
 
@@ -85,7 +85,7 @@ const Tab1: React.FC = () => {
 
   return (
     <IonPage>
-      <Tab1Header pendingOpsCount={pendingOpsCount} onLogout={handleLogout} />
+      <TransactionHeader pendingOpsCount={pendingOpsCount} onLogout={handleLogout} />
 
       <IonContent>
         <div className="flex flex-column justify-center items-center">
@@ -142,4 +142,4 @@ const Tab1: React.FC = () => {
   );
 };
 
-export default Tab1;
+export default Transactions;
