@@ -13,7 +13,7 @@ import { useState } from "react";
 interface TransactionListItemProps {
   transaction: Transaction;
   onModify: (transaction: Transaction) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: number | string) => void;
 }
 
 const TransactionListItem: React.FC<TransactionListItemProps> = ({

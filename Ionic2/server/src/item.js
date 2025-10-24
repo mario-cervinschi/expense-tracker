@@ -174,6 +174,7 @@ itemRouter.del('/:id', async (ctx) => {
     ctx.response.status = 403; // forbidden
   } else {
     await itemStore.remove({ _id: ctx.params.id });
+    broadcast(userId, { type: 'deleted', payload: item });
     ctx.response.status = 204; // no content
   }
 });

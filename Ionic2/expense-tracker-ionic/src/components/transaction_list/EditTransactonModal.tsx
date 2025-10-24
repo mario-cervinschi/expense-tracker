@@ -45,7 +45,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         setEditableTransaction(transaction);        
       } else {
         setEditableTransaction({
-          _id: 0,
+          _id: null,
           title: '',
           date: new Date(),
           sum: 0,

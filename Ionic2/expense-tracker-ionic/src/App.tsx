@@ -54,6 +54,8 @@ import RegisterPage from "./pages/auth/register/RegisterPage";
 
 setupIonicReact();
 
+
+
 const App: React.FC = () => (
   <IonApp>
     <AuthProvider>

@@ -1,4 +1,3 @@
-import axios from "axios";
 import { Transaction } from "../models/transaction";
 import { apiClient } from "./client";
 
@@ -35,7 +34,7 @@ export const getPagedTransactions = async (page: number): Promise<Transaction[]>
   return response.data.data.map(transformTransactionDate);
 };
 
-export const deleteTransactionById = async (id: number): Promise<void> => {
+export const deleteTransactionById = async (id: number | string): Promise<void> => {
   await apiClient.delete(`/item/${id}`);
 };
 

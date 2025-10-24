@@ -6,7 +6,7 @@ import { useState } from "react";
 interface TransactionListProps {
   transactions: Transaction[];
   onModify: (transaction: Transaction) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: number | string) => void;
   onInfiniteScroll: (event: CustomEvent<void>) => void;
   hasMorePages: boolean;
 }
