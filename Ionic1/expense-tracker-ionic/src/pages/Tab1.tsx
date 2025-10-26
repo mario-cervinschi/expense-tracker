@@ -55,13 +55,11 @@ const Tab1: React.FC = () => {
     setSaveError(null);
 
     try {
-      if(updatedTransaction.id){
-        await MainService.updateTransaction(
-          updatedTransaction
-        );
+      if (updatedTransaction.id) {
+        await MainService.updateTransaction(updatedTransaction);
       } else {
         MainService.createTransaction(updatedTransaction);
-      }      
+      }
 
       setIsModalOpen(false);
       setSelectedItem(null);
@@ -87,7 +85,7 @@ const Tab1: React.FC = () => {
   const onAddClick = () => {
     setSelectedItem(null);
     setIsModalOpen(true);
-  }
+  };
 
   const renderContent = () => {
     if (loading) {
@@ -119,7 +117,16 @@ const Tab1: React.FC = () => {
   };
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:3000");
+    const isLocalhost =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+
+    const wsURL = isLocalhost
+      ? "ws://localhost:3000"
+      : "ws://192.168.1.130:3000";
+
+    const ws = new WebSocket(wsURL);
+
     ws.onopen = () => {
       console.log("WebSocket connection estabilished");
     };
@@ -128,15 +135,24 @@ const Tab1: React.FC = () => {
       const message = JSON.parse(event.data);
       console.log("WebSocket message received: ", message);
 
-      switch(message.event){
-        case 'created':
-          setTransactions((currentTransactions) => [...currentTransactions, message.payload.item]);
+      switch (message.event) {
+        case "created":
+          setTransactions((currentTransactions) => [
+            ...currentTransactions,
+            message.payload.item,
+          ]);
           break;
-        case 'updated':
-          setTransactions((currentTransactions) => currentTransactions.map((t) => t.id === message.payload.item.id ? message.payload.item : t));
+        case "updated":
+          setTransactions((currentTransactions) =>
+            currentTransactions.map((t) =>
+              t.id === message.payload.item.id ? message.payload.item : t
+            )
+          );
           break;
-        case 'deleted':
-          setTransactions((currentTransactions) => currentTransactions.filter((t) => t.id !== message.payload.item.id));
+        case "deleted":
+          setTransactions((currentTransactions) =>
+            currentTransactions.filter((t) => t.id !== message.payload.item.id)
+          );
           break;
         default:
           break;
@@ -166,7 +182,7 @@ const Tab1: React.FC = () => {
     return () => {
       console.log("Closing WebSocket connection");
       ws.close();
-    }
+    };
   }, []);
 
   return (

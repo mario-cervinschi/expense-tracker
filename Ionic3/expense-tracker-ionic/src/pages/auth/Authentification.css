@@ -1,0 +1,115 @@
+.auth-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100%;
+    padding: 20px;
+}
+
+.welcome-section {
+    text-align: center;
+    margin-bottom: 40px;
+    color: white;
+}
+
+.welcome-section h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-section p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.auth-links {
+    text-align: center;
+    margin-top: 30px;
+    color: white;
+}
+
+.auth-links a {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-links a:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+.auth-links p {
+    margin-bottom: 10px;
+}
+
+.welcome-section h1 {
+    /* Adăugăm animația aici */
+    animation: fadeInDown 0.8s ease-out;
+}
+
+/* Definim animația (keyframes) */
+@keyframes fadeInDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+        /* Începe cu 20px mai sus */
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+        /* Ajunge la poziția finală */
+    }
+}
+
+/* Animații pentru butoane */
+.auth-button {
+    transition: all 0.3s ease;
+    transform: translateY(0);
+}
+
+.auth-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.auth-button:active {
+    transform: translateY(0);
+}
+
+/* Animație pentru input fields */
+.auth-input {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.auth-input:focus {
+    border-color: #8fa1f4;
+    transform: scale(1.02);
+}
+
+/* Animație pentru alert */
+.alert-enter {
+    animation: alertPop 0.4s ease-out;
+}
+
+@keyframes alertPop {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

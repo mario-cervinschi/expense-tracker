@@ -1,9 +1,17 @@
 import axios from "axios";
 import { Transaction } from "../models/transaction";
 
+const isLocalhost =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
+
+const baseURL = isLocalhost
+  ? "http://localhost:3000"
+  : "http://192.168.1.130:3000";
+
 const apiClient = axios.create({
-  baseURL: "http://localhost:3000",
-  headers: { "Content-Type": "application/json " },
+  baseURL,
+  headers: { "Content-Type": "application/json" },
 });
 
 const transformTransactionDate = (transaction: any): Transaction => ({

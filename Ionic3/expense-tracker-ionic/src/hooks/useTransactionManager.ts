@@ -1,14 +1,20 @@
-// src/hooks/useTransactionManager.ts
 import { useState, useEffect } from "react";
 import { useIonToast } from "@ionic/react";
 import { Transaction } from "../models/transaction";
-import * as StorageService from "../services/StorageService";
 import * as MainService from "../services/MainService";
 import { useNetwork } from "./useNetwork";
+import { useStorageService } from "./useStorageService";
 
 export const useTransactionManager = (searchExpense: string) => {
   const { networkStatus } = useNetwork();
   const [present] = useIonToast();
+  const {
+    getPendingOperations,
+    setPendingOperations,
+    addPendingOperation,
+    saveTransactionsCache,
+    getTransactionsCache,
+  } = useStorageService();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -30,7 +36,7 @@ export const useTransactionManager = (searchExpense: string) => {
           duration: 1500,
           color: "secondary",
         });
-        const data = await StorageService.getTransactionsCache();
+        const data = await getTransactionsCache();
         setTransactions(data);
         setPage(1);
         setHasMorePages(false);
@@ -61,12 +67,12 @@ export const useTransactionManager = (searchExpense: string) => {
       setPage(1);
       setHasMorePages(data.length === MainService.PAGE_LIMIT);
       setError(null);
-      await StorageService.saveTransactionsCache(formattedData);
+      await saveTransactionsCache(formattedData);
     } catch (err) {
       setError("Failed to fetch transactions. Trying local cache.");
       console.error(err);
       try {
-        const data = await StorageService.getTransactionsCache();
+        const data = await getTransactionsCache();
         setTransactions(data);
         setPage(1);
         setHasMorePages(false);
@@ -79,7 +85,7 @@ export const useTransactionManager = (searchExpense: string) => {
   };
 
   const syncOfflineData = async () => {
-    const pendingOps = await StorageService.getPendingOperations();
+    const pendingOps = await getPendingOperations();
     if (pendingOps.length === 0) {
       return;
     }
@@ -117,7 +123,7 @@ export const useTransactionManager = (searchExpense: string) => {
       }
     }
 
-    await StorageService.setPendingOperations(remainingOps);
+    await setPendingOperations(remainingOps);
     setPendingOpsCount(remainingOps.length);
 
     if (syncSuccess && remainingOps.length === 0) {
@@ -150,7 +156,7 @@ export const useTransactionManager = (searchExpense: string) => {
       duration: 2000,
       color: "warning",
     });
-    await StorageService.addPendingOperation({
+    await addPendingOperation({
       type: "delete",
       payload: { id: itemId },
       timestamp: Date.now(),
@@ -174,7 +180,7 @@ export const useTransactionManager = (searchExpense: string) => {
           duration: 2000,
           color: "success",
         });
-        return true; 
+        return true;
       } catch (err) {
         console.warn("Saving locally.", err);
         throw err;
@@ -193,7 +199,7 @@ export const useTransactionManager = (searchExpense: string) => {
       txToSave._id = `temp_${Date.now()}`;
     }
 
-    await StorageService.addPendingOperation({
+    await addPendingOperation({
       type: opType,
       payload: txToSave,
       timestamp: Date.now(),
@@ -208,7 +214,7 @@ export const useTransactionManager = (searchExpense: string) => {
       setTransactions((prev) => [txToSave, ...prev]);
     }
 
-    return true; 
+    return true;
   };
 
   const handleInfiniteScroll = async (event: CustomEvent<void>) => {
@@ -244,6 +250,7 @@ export const useTransactionManager = (searchExpense: string) => {
       : "ws://192.168.1.130:3000";
 
     const ws = new WebSocket(wsURL);
+    
     ws.onopen = () => {
       console.log("WebSocket connection estabilished");
 
@@ -292,9 +299,7 @@ export const useTransactionManager = (searchExpense: string) => {
       console.error("WebSocket error:", error);
     };
 
-    StorageService.getPendingOperations().then((ops) =>
-      setPendingOpsCount(ops.length)
-    );
+    getPendingOperations().then((ops) => setPendingOpsCount(ops.length));
     fetchTransactions();
 
     return () => {
@@ -325,7 +330,7 @@ export const useTransactionManager = (searchExpense: string) => {
     pendingOpsCount,
     hasMorePages,
     onDeleteClick,
-    handleSave, 
+    handleSave,
     handleInfiniteScroll,
   };
 };
