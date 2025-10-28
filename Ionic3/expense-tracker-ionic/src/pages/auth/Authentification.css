@@ -48,26 +48,21 @@
 }
 
 .welcome-section h1 {
-    /* Adăugăm animația aici */
     animation: fadeInDown 0.8s ease-out;
 }
 
-/* Definim animația (keyframes) */
 @keyframes fadeInDown {
     0% {
         opacity: 0;
         transform: translateY(-20px);
-        /* Începe cu 20px mai sus */
     }
 
     100% {
         opacity: 1;
         transform: translateY(0);
-        /* Ajunge la poziția finală */
     }
 }
 
-/* Animații pentru butoane */
 .auth-button {
     transition: all 0.3s ease;
     transform: translateY(0);
@@ -82,7 +77,6 @@
     transform: translateY(0);
 }
 
-/* Animație pentru input fields */
 .auth-input {
     transition: all 0.3s ease;
     border: 2px solid transparent;
@@ -93,7 +87,6 @@
     transform: scale(1.02);
 }
 
-/* Animație pentru alert */
 .alert-enter {
     animation: alertPop 0.4s ease-out;
 }

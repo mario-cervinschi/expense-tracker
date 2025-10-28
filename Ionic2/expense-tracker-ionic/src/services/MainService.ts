@@ -13,28 +13,35 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
   return response.data.map(transformTransactionDate);
 };
 
-export const getFilteredPagedTransactions = async (page: number, filter: string) : Promise<Transaction[]> => {
+export const getFilteredPagedTransactions = async (
+  page: number,
+  filter: string
+): Promise<Transaction[]> => {
   const response = await apiClient.get(`/item/filter/${filter}`, {
-    params:{
+    params: {
       page: page,
       limit: PAGE_LIMIT,
-    }
-  })
+    },
+  });
 
   return response.data.data.map(transformTransactionDate);
-}
+};
 
-export const getPagedTransactions = async (page: number): Promise<Transaction[]> => {
+export const getPagedTransactions = async (
+  page: number
+): Promise<Transaction[]> => {
   const response = await apiClient.get("/item", {
-    params:{
+    params: {
       page: page,
       limit: PAGE_LIMIT,
-    }
+    },
   });
   return response.data.data.map(transformTransactionDate);
 };
 
-export const deleteTransactionById = async (id: number | string): Promise<void> => {
+export const deleteTransactionById = async (
+  id: number | string
+): Promise<void> => {
   await apiClient.delete(`/item/${id}`);
 };
 
@@ -45,9 +52,11 @@ export const updateTransaction = async (
   return transformTransactionDate(response.data);
 };
 
-export const createTransaction = async (transaction: Transaction): Promise<Transaction> => {
+export const createTransaction = async (
+  transaction: Transaction
+): Promise<Transaction> => {
   const { _id, ...newTransactionData } = transaction;
 
-  const response = await apiClient.post('/item', newTransactionData);
+  const response = await apiClient.post("/item", newTransactionData);
   return transformTransactionDate(response.data);
-}
+};

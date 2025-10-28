@@ -17,6 +17,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useTransactionManager } from "../../hooks/useTransactionManager";
 import TransactionHeader from "../../components/transaction/TransactionHeader";
 import TransactionView from "../../components/transaction/TransactionView";
+import { MyPhoto } from "../../hooks/usePhotos";
 
 const Transactions: React.FC = () => {
   const { logout } = useAuth();
@@ -81,12 +82,13 @@ const Transactions: React.FC = () => {
 
   useEffect(groupAnimations, []);
 
-  const handleSaveModal = async (updatedTransaction: Transaction) => {
+  const handleSaveModal = async (updatedTransaction: Transaction,
+    photoToDelete?: MyPhoto) => {
     setIsSaving(true);
     setSaveError(null);
 
     try {
-      const success = await handleSaveLogic(updatedTransaction);
+      const success = await handleSaveLogic(updatedTransaction, photoToDelete);
       if (success) {
         setIsModalOpen(false);
         setSelectedItem(null);
@@ -103,7 +105,7 @@ const Transactions: React.FC = () => {
   };
 
   return (
-    <IonPage className="container">
+    <IonPage className="containerr">
       <TransactionHeader
         pendingOpsCount={pendingOpsCount}
         onLogout={handleLogout}

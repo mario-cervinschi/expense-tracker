@@ -6,7 +6,7 @@ const isLocalhost =
 
 const baseURL = isLocalhost
   ? "http://localhost:3000/api"
-  : "http://192.168.1.130:3000/api";
+  : "http://10.82.202.109:3000/api";
 
 export const apiClient = axios.create({
   baseURL,

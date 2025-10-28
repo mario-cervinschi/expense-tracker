@@ -4,6 +4,7 @@ import { Transaction } from "../models/transaction";
 import * as MainService from "../services/MainService";
 import { useNetwork } from "./useNetwork";
 import { useStorageService } from "./useStorageService";
+import { MyPhoto, usePhotos } from "./usePhotos";
 
 export const useTransactionManager = (searchExpense: string) => {
   const { networkStatus } = useNetwork();
@@ -22,6 +23,7 @@ export const useTransactionManager = (searchExpense: string) => {
   const [page, setPage] = useState(1);
   const [hasMorePages, setHasMorePages] = useState(true);
   const [pendingOpsCount, setPendingOpsCount] = useState(0);
+  const {deletePhoto} = usePhotos();
 
   const fetchTransactions = async (filter?: string, forceApi = false) => {
     if (!networkStatus.connected && (filter || page > 1)) {
@@ -165,7 +167,17 @@ export const useTransactionManager = (searchExpense: string) => {
     setTransactions((prev) => prev.filter((t) => t._id !== itemId));
   };
 
-  const handleSave = async (updatedTransaction: Transaction) => {
+  const handleSave = async (updatedTransaction: Transaction,
+    photoToDelete?: MyPhoto) => {
+      if (photoToDelete) {
+        try {
+          await deletePhoto(photoToDelete);
+          console.log("Photo deleted from local storage:", photoToDelete.filepath);
+        } catch (err) {
+          console.error("Failed to delete photo from local storage:", err);
+        }
+      }
+
     const isUpdate = !!updatedTransaction._id;
 
     if (networkStatus.connected) {

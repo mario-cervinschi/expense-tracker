@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNetwork } from "../../hooks/useNetwork";
 import {
   IonChip,

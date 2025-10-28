@@ -6,6 +6,8 @@ import {
   IonIcon,
   IonPage,
   IonSearchbar,
+  IonSelect,
+  IonSelectOption,
 } from "@ionic/react";
 import "./Transactions.css";
 import { useState } from "react";
@@ -27,6 +29,7 @@ const Transactions: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<Transaction | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const {
     transactions,
@@ -83,9 +86,22 @@ const Transactions: React.FC = () => {
     }
   };
 
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    const nameA = a.title?.toLowerCase() || "";
+    const nameB = b.title?.toLowerCase() || "";
+    if (sortOrder === "asc") {
+      return nameA.localeCompare(nameB);
+    } else {
+      return nameB.localeCompare(nameA);
+    }
+  });
+
   return (
     <IonPage>
-      <TransactionHeader pendingOpsCount={pendingOpsCount} onLogout={handleLogout} />
+      <TransactionHeader
+        pendingOpsCount={pendingOpsCount}
+        onLogout={handleLogout}
+      />
 
       <IonContent>
         <div className="flex flex-column justify-center items-center">
@@ -112,13 +128,24 @@ const Transactions: React.FC = () => {
           onIonInput={(e) => setSearchExpense(e.detail.value!)}
         ></IonSearchbar>
 
+        <IonSelect
+          value={sortOrder}
+          placeholder="Sort by name"
+          interface="popover"
+          onIonChange={(e) => setSortOrder(e.detail.value)}
+          style={{ margin: "10px" }}
+        >
+          <IonSelectOption value="asc">Name A → Z</IonSelectOption>
+          <IonSelectOption value="desc">Name Z → A</IonSelectOption>
+        </IonSelect>
+
         <TransactionView
           loading={loading}
           error={error}
-          transactions={transactions}
+          transactions={sortedTransactions}
           onModify={onModifyClick}
-          onDelete={onDeleteClick} 
-          onInfiniteScroll={handleInfiniteScroll} 
+          onDelete={onDeleteClick}
+          onInfiniteScroll={handleInfiniteScroll}
           hasMorePages={hasMorePages}
         />
 
@@ -126,7 +153,7 @@ const Transactions: React.FC = () => {
           isOpen={isModalOpen}
           transaction={selectedItem}
           onDidDismiss={handleCloseModal}
-          onSave={handleSaveModal} 
+          onSave={handleSaveModal}
           isSaving={isSaving}
           isSaveError={saveError}
           onDidDismissError={handleCloseErrorSaveModal}

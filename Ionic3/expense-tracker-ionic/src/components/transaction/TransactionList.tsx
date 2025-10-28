@@ -1,4 +1,4 @@
-import { IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList } from "@ionic/react";
+import { IonInfiniteScroll, IonInfiniteScrollContent, IonList } from "@ionic/react";
 import { Transaction } from "../../models/transaction";
 import TransactionListItem from "./TransactionListItem";
 

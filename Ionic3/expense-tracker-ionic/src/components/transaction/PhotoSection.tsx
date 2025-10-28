@@ -5,6 +5,7 @@ import {
     IonActionSheet,
     IonLoading,
     IonLabel,
+    useIonToast,
   } from "@ionic/react";
   import { camera, close, download, image } from "ionicons/icons";
   import { useState } from "react";
@@ -13,6 +14,7 @@ import {
   interface PhotoSectionProps {
     photo: MyPhoto | null;
     onPhotoChange: (photo: MyPhoto | null) => void;
+    onPhotoRemove: (photo: MyPhoto) => void;
     onCompressionChange: (isCompressing: boolean) => void;
     isSaving: boolean;
   }
@@ -21,19 +23,31 @@ import {
     photo,
     onPhotoChange,
     onCompressionChange,
+    onPhotoRemove,
     isSaving,
   }) => {
     const [isCompressing, setIsCompressing] = useState(false);
     const [showPhotoOptions, setShowPhotoOptions] = useState(false);
     const [showPhotoOverlay, setShowPhotoOverlay] = useState(false);
+
+    const { compressImage, downloadPhoto, takePhotoTemp, pickPhotoTemp } = usePhotos();
   
-    const { compressImage, takePhoto, deletePhoto, pickPhoto } = usePhotos();
+    const handleDownloadPhoto = async (e: React.MouseEvent) => {
+      e.stopPropagation();
   
+      if (!photo || !photo.webviewPath) {
+        console.error("Failed. No photo to download.");
+        return;
+      }
+  
+      await downloadPhoto(photo);
+    };
+
     const handleTakePhoto = async () => {
       setIsCompressing(true);
       onCompressionChange(true);
       try {
-        const newPhoto = await takePhoto();
+        const newPhoto = await takePhotoTemp();
         onPhotoChange(newPhoto);
       } finally {
         setIsCompressing(false);
@@ -45,7 +59,7 @@ import {
       setIsCompressing(true);
       onCompressionChange(true);
       try {
-        const newPhoto = await pickPhoto();
+        const newPhoto = await pickPhotoTemp();
         onPhotoChange(newPhoto);
       } finally {
         setIsCompressing(false);
@@ -64,7 +78,8 @@ import {
   
     const handleRemovePhoto = async () => {
       if (photo) {
-        await deletePhoto(photo);
+        // await deletePhoto(photo);
+        onPhotoRemove(photo);
         onPhotoChange(null);
       }
       setShowPhotoOverlay(false);
@@ -151,9 +166,7 @@ import {
                   <IonButton
                     fill="solid"
                     color="light"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
+                    onClick={handleDownloadPhoto}
                   >
                     <IonIcon icon={download} slot="icon-only" />
                   </IonButton>

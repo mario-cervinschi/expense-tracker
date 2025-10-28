@@ -26,7 +26,7 @@ interface EditTransactionModalProps {
   isOpen: boolean;
   transaction: Transaction | null;
   onDidDismiss: () => void;
-  onSave: (transaction: Transaction) => void;
+  onSave: (transaction: Transaction, photoToDelete?: MyPhoto) => void;
   isSaving: boolean;
   isSaveError: string | null;
   onDidDismissError: () => void;
@@ -46,13 +46,14 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
   const [isCompressing, setIsCompressing] = useState(false);
   const [modalPhoto, setModalPhoto] = useState<MyPhoto | null>(null);
+  const [photoToDelete, setPhotoToDelete] = useState<MyPhoto | null>(null);
 
   const [selectedLocation, setSelectedLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
 
-  const { compressImage } = usePhotos();
+  const { compressImage, savePhotoToStorage, deletePhoto } = usePhotos();
   const myLocation = useMyLocation();
 
   const enterAnimation = (baseEl: any) => {
@@ -108,8 +109,23 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         setModalPhoto(null);
         setSelectedLocation(null);
       }
+      setPhotoToDelete(null);
     }
   }, [isOpen, transaction]);
+
+  const handleCancel = async () => {
+    const isNewTempPhoto =
+      modalPhoto && modalPhoto.filepath !== transaction?.photoFilepath;
+
+    if (isNewTempPhoto) {
+      try {
+        await deletePhoto(modalPhoto);
+      } catch (error) {
+        console.error("Error deleting temporary photo:", error);
+      }
+    }
+    onDidDismiss();
+  };
 
   const handleInputChange = (e: any) => {
     if (!editableTransaction) return;
@@ -161,6 +177,13 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         setIsCompressing(false);
 
         if (compressedPhoto) {
+          const isNewPhoto =
+            compressedPhoto.filepath !== transaction?.photoFilepath;
+
+          if (isNewPhoto) {
+            await savePhotoToStorage(compressedPhoto);
+          }
+
           transactionToSave.photoFilepath = compressedPhoto.filepath;
           transactionToSave.photoWebviewPath = compressedPhoto.webviewPath;
         }
@@ -169,7 +192,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         transactionToSave.photoWebviewPath = undefined;
       }
 
-      onSave(transactionToSave);
+      onSave(transactionToSave, photoToDelete || undefined);
     }
   };
 
@@ -183,7 +206,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         <IonToolbar>
           <IonTitle>Modify Transaction</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={onDidDismiss}>Cancel</IonButton>
+            <IonButton onClick={handleCancel}>Cancel</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
@@ -228,6 +251,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
             <PhotoSection
               photo={modalPhoto}
               onPhotoChange={setModalPhoto}
+              onPhotoRemove={setPhotoToDelete}
               onCompressionChange={setIsCompressing}
               isSaving={isSaving}
             />
