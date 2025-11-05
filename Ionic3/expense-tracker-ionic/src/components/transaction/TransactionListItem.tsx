@@ -41,7 +41,7 @@ const TransactionListItem: React.FC<TransactionListItemProps> = ({
       <IonItem>
         <IonLabel>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            {transaction.photoFilepath && transaction.photoWebviewPath &&(
+            {transaction.photoFilepath &&(
               <IonIcon icon={imageOutline} />
             )}
             {transaction.latitude && transaction.longitude &&(

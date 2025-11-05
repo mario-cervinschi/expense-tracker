@@ -5,7 +5,6 @@ export interface Transaction {
   sum: number;
   income: boolean;
   photoFilepath?: string;
-  photoWebviewPath?: string;
   latitude?: number;
   longitude?: number;
 }

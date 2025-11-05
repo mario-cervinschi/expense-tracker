@@ -22,25 +22,26 @@ export const usePhotos = () => {
 
   const [present] = useIonToast();
 
-  const loadPhotos = () => {
-    const loadSavedPhotos = async () => {
-      const savedPhotoString = await get(PHOTOS_KEY);
-      const savedPhotos = (
-        savedPhotoString ? JSON.parse(savedPhotoString) : []
-      ) as MyPhoto[];
-      console.log("load", savedPhotos);
+  const loadSavedPhotos = async () => {
+    const savedPhotoString = await get(PHOTOS_KEY);
+    const savedPhotos = (
+      savedPhotoString ? JSON.parse(savedPhotoString) : []
+    ) as MyPhoto[];
 
-      for (let photo of savedPhotos) {
+    for (let photo of savedPhotos) {
+      try {
         const data = await readFile(photo.filepath);
         photo.webviewPath = `data:image/jpeg;base64,${data}`;
+      } catch (e) {
+        console.warn(`Could not read file ${photo.filepath}`, e);
       }
-      setPhotos(savedPhotos);
-    };
-
-    loadSavedPhotos();
+    }
+    setPhotos(savedPhotos);
   };
 
-  useEffect(loadPhotos, [get, readFile, setPhotos]);
+  useEffect(() => {
+    loadSavedPhotos();
+  }, []); // Dependency array gol - rulează doar la mount
 
   const takePhoto = async (): Promise<MyPhoto> => {
     const data = await getPhoto();
@@ -48,24 +49,49 @@ export const usePhotos = () => {
     await writeFile(filePath, data.base64String!);
     const webviewPath = `data:image/jpeg;base64,${data.base64String}`;
     const newPhoto = { filepath: filePath, webviewPath };
-    const newPhotos = [newPhoto, ...photos];
-    await set(
-      PHOTOS_KEY,
-      JSON.stringify(newPhotos.map((p) => ({ filepath: p.filepath })))
-    );
-    setPhotos(newPhotos);
+
+    // NU mai folosi setPhotos(prev => ...), folosește noua funcție
+    await savePhotoToStorage(newPhoto);
 
     return newPhoto;
   };
 
   const deletePhoto = async (photo: MyPhoto) => {
-    const newPhotos = photos.filter((p) => p.filepath !== photo.filepath);
-    await set(PHOTOS_KEY, JSON.stringify(newPhotos));
-    await deleteFile(photo.filepath);
-    setPhotos(newPhotos);
-  };
-  
+    // 1. Citește starea CURENTĂ din Preferences
+    const savedPhotoString = await get(PHOTOS_KEY);
+    const savedPhotos = (
+      savedPhotoString ? JSON.parse(savedPhotoString) : []
+    ) as MyPhoto[];
 
+    // 2. Creează noul array filtrat
+    const newPhotos = savedPhotos.filter((p) => p.filepath !== photo.filepath);
+
+    // 3. Salvează noul array în Preferences
+    await set(
+      PHOTOS_KEY,
+      JSON.stringify(newPhotos) // Salvează obiectul întreg
+    );
+
+    // 4. Actualizează starea locală a hook-ului curent
+    // Trebuie să actualizăm și starea locală cu datele corecte
+    const photosWithWebview = [...newPhotos];
+    for (let p of photosWithWebview) {
+      if (!p.webviewPath) {
+        try {
+          const data = await readFile(p.filepath);
+          p.webviewPath = `data:image/jpeg;base64,${data}`;
+        } catch (e) {}
+      }
+    }
+    setPhotos(photosWithWebview);
+
+    // 5. Șterge fișierul fizic
+    try {
+      await deleteFile(photo.filepath);
+    } catch (e) {
+      console.error("Could not delete file from filesystem", e);
+    }
+  };
   const pickPhoto = async (): Promise<MyPhoto> => {
     const photo = await Camera.getPhoto({
       resultType: CameraResultType.Base64,
@@ -77,12 +103,9 @@ export const usePhotos = () => {
     await writeFile(filePath, photo.base64String!);
     const webviewPath = `data:image/jpeg;base64,${photo.base64String}`;
     const newPhoto = { filepath: filePath, webviewPath };
-    const newPhotos = [newPhoto, ...photos];
-    await set(
-      PHOTOS_KEY,
-      JSON.stringify(newPhotos.map((p) => ({ filepath: p.filepath })))
-    );
-    setPhotos(newPhotos);
+
+    // NU mai folosi setPhotos(prev => ...), folosește noua funcție
+    await savePhotoToStorage(newPhoto);
 
     return newPhoto;
   };
@@ -189,11 +212,35 @@ export const usePhotos = () => {
   };
 
   const savePhotoToStorage = async (photo: MyPhoto) => {
-    setPhotos(prevPhotos => {
-        const newPhotos = [ photo, ...prevPhotos ];
-        set(PHOTOS_KEY, JSON.stringify(newPhotos.map(p => ({filepath: p.filepath}))));
-        return newPhotos;
-    });
+    const savedPhotoString = await get(PHOTOS_KEY);
+    const savedPhotos = (
+      savedPhotoString ? JSON.parse(savedPhotoString) : []
+    ) as MyPhoto[];
+
+    // 2. Creează noul array
+    // Asigură-te că nu adaugi duplicate, dacă poza deja există (update)
+    const existingIndex = savedPhotos.findIndex(
+      (p) => p.filepath === photo.filepath
+    );
+    let newPhotos: MyPhoto[];
+
+    if (existingIndex > -1) {
+      // Poza există, o actualizăm (de ex. webviewPath-ul compresat)
+      savedPhotos[existingIndex] = photo;
+      newPhotos = [...savedPhotos];
+    } else {
+      // Poza e nouă
+      newPhotos = [photo, ...savedPhotos];
+    }
+
+    // 3. Salvează noul array COMPLET în Preferences
+    await set(
+      PHOTOS_KEY,
+      JSON.stringify(newPhotos) // Salvează obiectul întreg
+    );
+
+    // 4. Actualizează starea locală a hook-ului curent
+    setPhotos(newPhotos);
   };
 
   return {
@@ -203,8 +250,8 @@ export const usePhotos = () => {
     pickPhoto,
     compressImage,
     downloadPhoto,
-    takePhotoTemp, 
-    pickPhotoTemp, 
+    takePhotoTemp,
+    pickPhotoTemp,
     savePhotoToStorage,
   };
 };

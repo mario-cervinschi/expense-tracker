@@ -21,6 +21,7 @@ import { MyPhoto, usePhotos } from "../../hooks/usePhotos";
 import { useMyLocation } from "../../hooks/useMyLocation";
 import PhotoSection, { compressModalPhoto } from "./PhotoSection";
 import LocationSection from "./LocationSection";
+import { usePreferences } from "../../hooks/usePreferences";
 
 interface EditTransactionModalProps {
   isOpen: boolean;
@@ -45,8 +46,12 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     useState<Transaction | null>(null);
 
   const [isCompressing, setIsCompressing] = useState(false);
+  const [originalPhoto, setOriginalPhoto] = useState<MyPhoto | null>(null);
+  const [tempPhoto, setTempPhoto] = useState<MyPhoto | null>(null);
+  const [deleteOriginalPhoto, setDeleteOriginalPhoto] =
+    useState<boolean>(false);
   const [modalPhoto, setModalPhoto] = useState<MyPhoto | null>(null);
-  const [photoToDelete, setPhotoToDelete] = useState<MyPhoto | null>(null);
+  const { get } = usePreferences();
 
   const [selectedLocation, setSelectedLocation] = useState<{
     lat: number;
@@ -81,13 +86,45 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
       if (transaction) {
         setEditableTransaction(transaction);
 
-        if (transaction.photoFilepath && transaction.photoWebviewPath) {
-          setModalPhoto({
-            filepath: transaction.photoFilepath,
-            webviewPath: transaction.photoWebviewPath,
-          });
-        } else {
-          setModalPhoto(null);
+        if (transaction) {
+          setEditableTransaction(transaction);
+
+          if (transaction.photoFilepath) {
+            // TypeScript știe aici că photoFilepath este 'string'
+            const currentFilepath = transaction.photoFilepath;
+
+            get("photos").then((savedPhotoss) => {
+              if (savedPhotoss) {
+                const savedPhotos = (
+                  savedPhotoss ? JSON.parse(savedPhotoss) : []
+                ) as MyPhoto[];
+
+                let found = false;
+
+                for (let photo of savedPhotos) {
+                  if (photo.filepath === currentFilepath) {
+                    const initialPhoto = photo;
+                    setModalPhoto(initialPhoto);
+                    setOriginalPhoto(initialPhoto);
+                    console.log("New photo is ", initialPhoto);
+                    found = true;
+                    break;
+                  }
+                }
+
+                if (!found) {
+                  setModalPhoto(null);
+                  setOriginalPhoto(null);
+                }
+              } else {
+                setModalPhoto(null);
+                setOriginalPhoto(null);
+              }
+            });
+          } else {
+            setModalPhoto(null);
+            setOriginalPhoto(null);
+          }
         }
 
         if (transaction.latitude && transaction.longitude) {
@@ -107,19 +144,19 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           income: false,
         });
         setModalPhoto(null);
+        setOriginalPhoto(null);
         setSelectedLocation(null);
       }
-      setPhotoToDelete(null);
+      setDeleteOriginalPhoto(false);
+      setTempPhoto(null);
     }
   }, [isOpen, transaction]);
 
   const handleCancel = async () => {
-    const isNewTempPhoto =
-      modalPhoto && modalPhoto.filepath !== transaction?.photoFilepath;
-
-    if (isNewTempPhoto) {
+    if (tempPhoto) {
       try {
-        await deletePhoto(modalPhoto);
+        // ...șterge-o.
+        await deletePhoto(tempPhoto);
       } catch (error) {
         console.error("Error deleting temporary photo:", error);
       }
@@ -133,9 +170,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     const { name, value, checked, type } = e.target;
     let finalValue: any;
 
-    if (name === "date") {
-      finalValue = new Date(e.detail.value);
-    } else if (name === "sum") {
+    if (name === "sum") {
       finalValue = parseFloat(value) || 0;
     } else if (name === "income" || type === "checkbox") {
       finalValue = checked;
@@ -163,10 +198,14 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   };
 
   const handleSaveClick = async () => {
+    console.log("called hsc");
     if (editableTransaction) {
       const transactionToSave: Transaction = {
         ...editableTransaction,
       };
+
+      const photoToActuallyDelete =
+        deleteOriginalPhoto && originalPhoto ? originalPhoto : undefined;
 
       if (modalPhoto && modalPhoto.webviewPath) {
         setIsCompressing(true);
@@ -174,25 +213,62 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           modalPhoto,
           compressImage
         );
+
+        console.log(compressedPhoto);
+
         setIsCompressing(false);
 
         if (compressedPhoto) {
           const isNewPhoto =
-            compressedPhoto.filepath !== transaction?.photoFilepath;
+            !originalPhoto ||
+            compressedPhoto.filepath !== originalPhoto.filepath;
 
           if (isNewPhoto) {
+            console.log("called spts");
             await savePhotoToStorage(compressedPhoto);
           }
 
           transactionToSave.photoFilepath = compressedPhoto.filepath;
-          transactionToSave.photoWebviewPath = compressedPhoto.webviewPath;
         }
       } else {
         transactionToSave.photoFilepath = undefined;
-        transactionToSave.photoWebviewPath = undefined;
       }
 
-      onSave(transactionToSave, photoToDelete || undefined);
+      onSave(transactionToSave, photoToActuallyDelete);
+    }
+  };
+
+  // Handler când se apasă "Remove" pe poza curentă
+  const handlePhotoRemove = (removedPhoto: MyPhoto) => {
+    if (originalPhoto && removedPhoto.filepath === originalPhoto.filepath) {
+      // Dacă se șterge poza ORIGINALĂ, marcheaz-o pentru ștergere
+      setDeleteOriginalPhoto(true);
+    }
+
+    if (tempPhoto && removedPhoto.filepath === tempPhoto.filepath) {
+      // Dacă se șterge poza TEMPORARĂ, șterge-o acum
+      // și resetează starea temp
+      deletePhoto(tempPhoto).catch((err) =>
+        console.error("Failed to delete temp photo", err)
+      );
+      setTempPhoto(null);
+    }
+
+    // Golește UI-ul
+    setModalPhoto(null);
+  };
+
+  const handleDateChange = (e: any) => {
+    if (!editableTransaction) return;
+  
+    // Valoarea de la IonDatetime vine în e.detail.value
+    const newDateValue = e.detail.value; 
+  
+    if (newDateValue) {
+      setEditableTransaction({
+        ...editableTransaction,
+        date: new Date(newDateValue), // Actualizează data cu noua valoare
+      });
     }
   };
 
@@ -227,7 +303,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 name="date"
                 value={editableTransaction.date.toISOString()}
                 presentation="date"
-                onIonChange={handleInputChange}
+                onIonChange={handleDateChange} // <-- AICI ESTE MODIFICAREA
               />
             </IonItem>
             <IonItem>
@@ -251,7 +327,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
             <PhotoSection
               photo={modalPhoto}
               onPhotoChange={setModalPhoto}
-              onPhotoRemove={setPhotoToDelete}
+              onPhotoRemove={handlePhotoRemove}
               onCompressionChange={setIsCompressing}
               isSaving={isSaving}
             />
