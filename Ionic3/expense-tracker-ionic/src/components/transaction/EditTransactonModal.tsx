@@ -303,7 +303,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 name="date"
                 value={editableTransaction.date.toISOString()}
                 presentation="date"
-                onIonChange={handleDateChange} // <-- AICI ESTE MODIFICAREA
+                onIonChange={handleDateChange}
               />
             </IonItem>
             <IonItem>
