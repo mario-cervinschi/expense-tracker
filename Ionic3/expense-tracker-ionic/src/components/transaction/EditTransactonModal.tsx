@@ -15,7 +15,7 @@ import {
   IonAlert,
   createAnimation,
 } from "@ionic/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Transaction } from "../../models/transaction";
 import { MyPhoto, usePhotos } from "../../hooks/usePhotos";
 import { useMyLocation } from "../../hooks/useMyLocation";
@@ -48,10 +48,12 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   const [isCompressing, setIsCompressing] = useState(false);
   const [originalPhoto, setOriginalPhoto] = useState<MyPhoto | null>(null);
   const [tempPhoto, setTempPhoto] = useState<MyPhoto | null>(null);
-  const [deleteOriginalPhoto, setDeleteOriginalPhoto] =
-    useState<boolean>(false);
+  const [deleteOriginalPhoto, setDeleteOriginalPhoto] = useState<boolean>(false);
   const [modalPhoto, setModalPhoto] = useState<MyPhoto | null>(null);
+  const [isLoadingPhoto, setIsLoadingPhoto] = useState(false);
+  
   const { get } = usePreferences();
+  const modalRef = useRef<HTMLIonModalElement>(null);
 
   const [selectedLocation, setSelectedLocation] = useState<{
     lat: number;
@@ -82,51 +84,49 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   };
 
   useEffect(() => {
-    if (isOpen) {
+    const loadModalData = async () => {
+      if (!isOpen) return;
+
+      setIsLoadingPhoto(true);
+
       if (transaction) {
         setEditableTransaction(transaction);
 
-        if (transaction) {
-          setEditableTransaction(transaction);
+        // Load photo if exists
+        if (transaction.photoFilepath) {
+          const currentFilepath = transaction.photoFilepath;
 
-          if (transaction.photoFilepath) {
-            // TypeScript știe aici că photoFilepath este 'string'
-            const currentFilepath = transaction.photoFilepath;
+          try {
+            const savedPhotoss = await get("photos");
+            if (savedPhotoss) {
+              const savedPhotos = JSON.parse(savedPhotoss) as MyPhoto[];
+              const foundPhoto = savedPhotos.find(
+                (photo) => photo.filepath === currentFilepath
+              );
 
-            get("photos").then((savedPhotoss) => {
-              if (savedPhotoss) {
-                const savedPhotos = (
-                  savedPhotoss ? JSON.parse(savedPhotoss) : []
-                ) as MyPhoto[];
-
-                let found = false;
-
-                for (let photo of savedPhotos) {
-                  if (photo.filepath === currentFilepath) {
-                    const initialPhoto = photo;
-                    setModalPhoto(initialPhoto);
-                    setOriginalPhoto(initialPhoto);
-                    console.log("New photo is ", initialPhoto);
-                    found = true;
-                    break;
-                  }
-                }
-
-                if (!found) {
-                  setModalPhoto(null);
-                  setOriginalPhoto(null);
-                }
+              if (foundPhoto) {
+                setModalPhoto(foundPhoto);
+                setOriginalPhoto(foundPhoto);
+                console.log("New photo is ", foundPhoto);
               } else {
                 setModalPhoto(null);
                 setOriginalPhoto(null);
               }
-            });
-          } else {
+            } else {
+              setModalPhoto(null);
+              setOriginalPhoto(null);
+            }
+          } catch (error) {
+            console.error("Error loading photo:", error);
             setModalPhoto(null);
             setOriginalPhoto(null);
           }
+        } else {
+          setModalPhoto(null);
+          setOriginalPhoto(null);
         }
 
+        // Set location
         if (transaction.latitude && transaction.longitude) {
           setSelectedLocation({
             lat: transaction.latitude,
@@ -136,6 +136,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           setSelectedLocation(null);
         }
       } else {
+        // New transaction
         setEditableTransaction({
           _id: null,
           title: "",
@@ -147,15 +148,21 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         setOriginalPhoto(null);
         setSelectedLocation(null);
       }
+
       setDeleteOriginalPhoto(false);
       setTempPhoto(null);
-    }
-  }, [isOpen, transaction]);
+      
+      setTimeout(() => {
+        setIsLoadingPhoto(false);
+      }, 100);
+    };
+
+    loadModalData();
+  }, [isOpen, transaction, get]);
 
   const handleCancel = async () => {
     if (tempPhoto) {
       try {
-        // ...șterge-o.
         await deletePhoto(tempPhoto);
       } catch (error) {
         console.error("Error deleting temporary photo:", error);
@@ -238,42 +245,37 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     }
   };
 
-  // Handler când se apasă "Remove" pe poza curentă
   const handlePhotoRemove = (removedPhoto: MyPhoto) => {
     if (originalPhoto && removedPhoto.filepath === originalPhoto.filepath) {
-      // Dacă se șterge poza ORIGINALĂ, marcheaz-o pentru ștergere
       setDeleteOriginalPhoto(true);
     }
 
     if (tempPhoto && removedPhoto.filepath === tempPhoto.filepath) {
-      // Dacă se șterge poza TEMPORARĂ, șterge-o acum
-      // și resetează starea temp
       deletePhoto(tempPhoto).catch((err) =>
         console.error("Failed to delete temp photo", err)
       );
       setTempPhoto(null);
     }
 
-    // Golește UI-ul
     setModalPhoto(null);
   };
 
   const handleDateChange = (e: any) => {
     if (!editableTransaction) return;
-  
-    // Valoarea de la IonDatetime vine în e.detail.value
-    const newDateValue = e.detail.value; 
-  
+
+    const newDateValue = e.detail.value;
+
     if (newDateValue) {
       setEditableTransaction({
         ...editableTransaction,
-        date: new Date(newDateValue), // Actualizează data cu noua valoare
+        date: new Date(newDateValue),
       });
     }
   };
 
   return (
     <IonModal
+      ref={modalRef}
       isOpen={isOpen}
       enterAnimation={enterAnimation}
       onDidDismiss={onDidDismiss}
@@ -287,7 +289,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        {editableTransaction && (
+        {!isLoadingPhoto && editableTransaction && (
           <>
             <IonItem>
               <IonLabel position="stacked">Title</IonLabel>
@@ -297,15 +299,18 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 onIonChange={handleInputChange}
               />
             </IonItem>
-            <IonItem>
+            
+            <IonItem key={`datetime-${transaction?._id || 'new'}`}>
               <IonLabel position="stacked">Date</IonLabel>
               <IonDatetime
                 name="date"
                 value={editableTransaction.date.toISOString()}
                 presentation="date"
                 onIonChange={handleDateChange}
+                style={{ position: 'relative', zIndex: 1 }}
               />
             </IonItem>
+            
             <IonItem>
               <IonLabel position="stacked">Sum</IonLabel>
               <IonInput
@@ -350,10 +355,16 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         )}
 
         <IonLoading
-          isOpen={isSaving || isCompressing}
-          message={isCompressing ? "Compressing image..." : "Saving..."}
+          isOpen={isSaving || isCompressing || isLoadingPhoto}
+          message={
+            isLoadingPhoto 
+              ? "Loading..." 
+              : isCompressing 
+              ? "Compressing image..." 
+              : "Saving..."
+          }
           spinner="circles"
-        ></IonLoading>
+        />
 
         <IonAlert
           isOpen={!!isSaveError}
@@ -361,7 +372,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           message={isSaveError || ""}
           buttons={["OK"]}
           onDidDismiss={onDidDismissError}
-        ></IonAlert>
+        />
       </IonContent>
     </IonModal>
   );
