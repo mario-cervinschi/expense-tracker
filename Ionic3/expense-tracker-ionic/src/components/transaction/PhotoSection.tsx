@@ -85,27 +85,6 @@ import {
       setShowPhotoOverlay(false);
     };
   
-    const getCompressedPhoto = async (): Promise<MyPhoto | null> => {
-      if (photo && photo.webviewPath) {
-        setIsCompressing(true);
-        onCompressionChange(true);
-        try {
-          const base64Data = photo.webviewPath?.split(",")[1];
-          if (base64Data) {
-            const compressedBase64 = await compressImage(base64Data, 800);
-            return {
-              filepath: photo.filepath,
-              webviewPath: `data:image/jpeg;base64,${compressedBase64}`,
-            };
-          }
-        } finally {
-          setIsCompressing(false);
-          onCompressionChange(false);
-        }
-      }
-      return null;
-    };
-  
     return (
       <>
         {!photo && (
